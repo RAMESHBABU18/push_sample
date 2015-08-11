@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+<project name="eai.build.deploy" default="build.deploy.bar"
+	basedir=".">
+	<taskdef resource="net/sf/antcontrib/antlib.xml" />	
+	<target name="init" description="">
+		<tstamp>
+			<format property="buildTime" pattern="yyyyMMddHHmmss" />
+		</tstamp>
+		<property file="eai_build_common.properties" />
+		<property file="${env}_brokersdetails.properties" />
+        <property name="temp.dir" location="${build.dir}\temp" />	
+	    <property name="bar.file.dir" value="${build.dir}\BARfile" />
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${bar.file.dir}" />
+		<mkdir dir="${temp.dir}" />
+	</target>
+
+	<target name="build.deploy.bar" description="" depends="init">
+		<tstamp>
+			<format property="currentTime" pattern="yyyyMMddHHmmss" />
+		</tstamp>
+		<antcall target="build.bars" />
+	</target>
+
+	<!--******************************************** -->
+	<!-- build.bars -->
+	<!--******************************************** -->
+
+	<target name="build.bars" depends="compile.projects">
+		<echo message="${bar.file.names} " />
+		<for list="${bar.file.names}" delimiter="," param="bar.file">
+			<sequential>
+				<echo message="@{bar.file}" />
+				<var name="bar.filename" value="@{bar.file}" />
+				<propertyregex property="argln_broker_projects"
+					override="true" input="${@{bar.file}_projects}" regexp="\,"
+					replace="\\\\, " global="false" defaultValue="${@{bar.file}_projects}" />
+				<propertyregex property="argln_broker_msgflows"
+					override="true" input="${@{bar.file}_msgflows}" regexp="\,"
+					replace="\\\\, " global="false" defaultValue="${@{bar.file}_msgflows}" />
+				<if>
+					<equals arg1="${@{bar.file}_msgflows}" arg2="NO_MSG_FLOWS" />
+					<then>
+						<var name="argln_Totalbar" value="" />
+						<for list="${argln_broker_projects}" delimiter="," param="jar.file">
+							<sequential>
+								<propertyregex property="argln_java_projects"
+									override="true" input="@{jar.file}" regexp="\\" replace=""
+									global="false" defaultValue="@{jar.file}" />
+								<propertyregex property="argln_java_projects"
+									override="true" input="${argln_java_projects}" regexp=" "
+									replace="" global="false" defaultValue="${argln_java_projects}" />
+								<var name="argln_Totalbar" value="${argln_Totalbar} ${argln_java_projects}.jar" />
+							</sequential>
+						</for>
+					</then>
+					<else>
+						<var name="argln_jars" value="" />
+						<for list="${argln_broker_projects}" delimiter="," param="jar.file">
+							<sequential>
+								<echo message="@{jar.file} " />
+								<propertyregex property="argln_java_projects"
+									override="true" input="@{jar.file}" regexp="\\" replace=""
+									global="false" defaultValue="@{jar.file}" />
+								<propertyregex property="argln_java_projects"
+									override="true" input="${argln_java_projects}" regexp=" "
+									replace="" global="false" defaultValue="${argln_java_projects}" />
+								<var name="argln_jars" value="${argln_jars} ${argln_java_projects}.jar" />
+							</sequential>
+						</for>
+						<var name="argln_flows" value="" />
+						<for list="${argln_broker_msgflows}" delimiter="," param="flow.file">
+							<sequential>
+								<echo message="@{flow.file} " />
+								<propertyregex property="argln_broker_msgflows"
+									override="true" input="@{flow.file}" regexp="\\" replace=""
+									global="false" defaultValue="@{flow.file}" />
+								<propertyregex property="argln_broker_msgflows"
+									override="true" input="${argln_broker_msgflows}" regexp=" "
+									replace="" global="false" defaultValue="${argln_broker_msgflows}" />
+								<var name="argln_flows" value="${argln_flows} ${argln_broker_msgflows}" />
+							</sequential>
+						</for>
+						<var name="argln_Totalbar" value="${argln_jars} ${argln_flows}" />
+					</else>
+				</if>
+				<java classname="com.ibm.broker.config.appdev.FlowRendererBAR"
+					failonerror="true" fork="true">
+					<arg value="-w" />
+					<arg value="${temp.dir}" />
+					<arg value="-a" />
+					<arg value="${bar.file.dir}/${bar.filename}.bar" />
+					<arg line="-o ${argln_Totalbar}" />
+					<classpath>
+						<fileset dir="${lib.dir}\\mqlib">
+							<include name="*.jar" />
+						</fileset>
+					</classpath>
+				</java>
+			</sequential>
+		</for>
+		<delete dir="${temp.dir}"/>
+	</target>
+
+
+	<!--******************************************** -->
+	<!-- Compile projects -->
+	<!--******************************************** -->
+	<target name="compile.projects">
+		<echo message="projects compiling ...." />
+		<for list="${jar.projects}" delimiter="," param="java.file.name">
+			<sequential>
+				<echo message="${sourcecode.dir}" />
+				<delete dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
+				<mkdir dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
+				<javac srcdir="${sourcecode.dir}\\@{java.file.name}\\src"
+					destdir="${sourcecode.dir}\\@{java.file.name}\\bin\\"
+					includeantruntime="true" >
+					<classpath>
+						<fileset dir="${lib.dir}">
+							<include name="*.jar" />
+						</fileset>
+						<fileset dir="${temp.dir}">
+							<include name="*.jar" />
+						</fileset>
+					</classpath>
+				</javac>				
+				
+				<if>
+					<available file="${sourcecode.dir}\\@{java.file.name}\\resource"
+						type="dir" />
+					<then>
+						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
+							<fileset dir="${sourcecode.dir}\\@{java.file.name}\\resource">
+								<include name="*.properties" />
+								<include name="*.xml" />
+								<include name="**" />
+							</fileset>
+						</copy>
+					</then>
+					<else>
+						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
+							<fileset dir="${sourcecode.dir}\\@{java.file.name}">
+								<include name="**/*.properties" />
+								<include name="**/*.xml" />
+							</fileset>
+						</copy>
+					</else>
+				</if>
+				
+				<if>
+				<equals arg1="@{java.file.name}" arg2="ESB_WW_CONFIG" />
+				<then>
+				<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\props\\ESBProperties.xml"
+							replacefilterfile="${sourcecode.dir}\\@{java.file.name}\\bin\\env\\${env}\\ESBEnvironment.properties">						
+						</replace>	
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar"
+							basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						</jar>
+				</then>
+				</if>
+
+				<if>
+					<equals arg1="@{java.file.name}" arg2="ESB_WW_ZCACHE_ACCESSOR" />
+					<then>
+						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\log4j2.xml"
+							replacefilterfile="${env}_brokersdetails.properties" />
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar"
+							basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						</jar>
+					</then>
+					<else>
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar"
+							basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						</jar>
+					</else>
+				</if>
+			</sequential>
+		</for>
+		<antcall target="copy.files" />
+	</target>
+
+
+	<!--******************************************** -->
+	<!-- Copy flow files to temp location -->
+	<!--******************************************** -->
+	<target name="copy.files">
+		<for list="${project.file.names}" delimiter="," param="project.file.name">
+			<sequential>
+				<copy todir="${temp.dir}">
+					<fileset dir="${sourcecode.dir}\\@{project.file.name}\\"
+						includes="*.msgflow,*.subflow,*.esql" />
+				</copy>
+			</sequential>
+		</for>
+	</target>
+
+
+
+	<!--************************************************* -->
+	<!-- The target for deploying the Broker Archive file. -->
+	<!--************************************************* -->
+	<target name="deploy.bar" depends="init" description="Deploying barfile">
+		<for list="${hosts.list}" delimiter="," param="brokerHostName">
+			<sequential>
+				<for list="${@{brokerHostName}.brokers.list}" delimiter=","
+					param="borker.name">
+					<sequential>
+						<for list="${@{borker.name}.eg.list}" delimiter=","
+							param="borker.execgroup.name">
+							<sequential>
+								<for list="${@{borker.name}.@{borker.execgroup.name}.bar.list}"
+									delimiter="," param="bar.file">
+									<sequential>
+										<java classname="DeployBAR" failonerror="true" fork="true">
+											<classpath>
+												<fileset dir="${lib.dir}\\mqlib">
+													<include name="*.jar" />
+												</fileset>
+											</classpath>
+											<arg value="@{brokerHostName}" /><!--brokerHostName -->
+											<arg value="${@{borker.name}.port}" /><!--brokerPort -->
+											<arg value="${@{borker.name}.queue.manager}" /><!--brokerQmgrName -->
+											<arg value="@{borker.execgroup.name}" /><!--executionGroupName -->
+											<arg value="${bar.file.dir}/@{bar.file}.bar" /><!--barFileName -->
+										</java>
+									</sequential>
+								</for>
+							</sequential>
+						</for>
+					</sequential>
+				</for>
+			</sequential>
+		</for>
+		<delete dir="${build.dir}"/>
+	</target>
+</project>

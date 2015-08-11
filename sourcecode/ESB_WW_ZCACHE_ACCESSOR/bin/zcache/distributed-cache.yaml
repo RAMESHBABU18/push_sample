@@ -1,0 +1,3 @@
+applicationToken: 987654321Z11XY
+distributedCaches:  
+- { name: GIPEAIRoutingRules, endPoint: "http://sp03cd1.wal-mart.com:51520/resources/datacaches/FIN_AI", defaultTimeToLiveSeconds: 86400 }

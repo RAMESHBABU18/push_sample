@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	
+	<properties>
+		<!--  LOG FILE DIR  -->
+		 <!--  <property name="logFileDir">C:\\Walmart\\zCache\\logs\\</property> -->
+		<property name="logFileDir">/var/mqm/mqft/logs/GL110000/agents/AG_GL_3/logs/</property> 
+		<!--  LOG FILE NAME  -->
+		<property name="logFileName">zcache</property>
+		
+		<!--  LOG PATTERN  -->
+		<property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5.5p | %-10.10t | %-20.20C:%-5.5L | %msg%n</property>
+	</properties>
+	
+	<appenders>		
+	 
+	 	<!--  LOG TO CONSOLE/OUTPUT  -->
+		<Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{ISO8601}] [%t] %-5p %c{6} - %msg%n"/>
+        </Console>     
+       
+       <!--  LOG TO  FILE  -->
+       <!--  
+       <File name="File" fileName="${logFileDir}${logFileName}_log.log">
+            <PatternLayout pattern="[%d{ISO8601}] [%t] %-5p %c{6} - %msg%n"/>
+       </File>
+         --> 
+         
+         <!--  LOG TO  ROLLING FILE  -->
+        
+        <RollingFile name="RollingFile" fileName="${logFileDir}${logFileName}.log" 
+        	filePattern="${logFileDir}$${date:yyyy-MM}/${logFileName}-%d{yyyy-MM-dd}-%i.log.gz">        	
+			<PatternLayout pattern="[%d{ISO8601}] [%t] %-5p %c{6} - %msg%n"/>			
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="1 MB"/> 
+			</Policies>
+		</RollingFile>   
+		   
+		    
+	</appenders>
+	<loggers>
+		 <!--
+		<root level="DEBUG"> 
+			<appender-ref ref="Console"/> 	
+		</root>
+		 -->
+		 
+		 <!--  VALID LEVELS TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF  -->
+		 <logger name="com.walmart" additivity="false" level="DEBUG"> 		 	      
+              <!-- <AppenderRef ref="Console"/>   -->  
+            <AppenderRef ref="RollingFile"/>  
+        </logger>
+        
+	</loggers>
+</configuration>

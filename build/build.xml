@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<project name="eai.build.deploy" default="run">
+	<target name="run" description="">
+		<echo message="Invoking the broker master ant script file..." />
+		<ant antfile="eai_build.xml">
+		<property name="env" value="dev"/>
+		</ant>
+		<echo message="***********************************************************" />
+		<echo message="*****Broker Auto Build and Deploy is Successfully Complete.*****" />
+		<echo message="***********************************************************" />
+	</target>
+	<target name="dev.build.bars">
+		<ant antfile="eai_build.xml" target="build.bars">
+			<property name="env" value="dev" />
+		</ant>
+	</target>
+	<target name="fut.build.bars">
+		<ant antfile="eai_build.xml" target="build.bars">
+			<property name="env" value="fut" />
+		</ant>
+	</target>
+	<target name="dev.deploy.bar">
+		<ant antfile="eai_build.xml" target="deploy.bar">
+			<property name="env" value="dev" />
+		</ant>
+	</target>
+	<target name="fut.deploy.bar">
+		<ant antfile="eai_build.xml" target="deploy.bar">
+			<property name="env" value="fut" />
+		</ant>
+	</target>
+</project>
