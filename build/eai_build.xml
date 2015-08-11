@@ -31,6 +31,7 @@
 	
 	<target name="check.env">
 	<echo message="${ALL}" />
+	<echo message="${username}" />
 	<antcontrib:if>
 		<equals arg1="${ALL}" arg2="ALL" />
 		<then>
