@@ -10,40 +10,82 @@
 	</macrodef>
 
 	<property file="eai_build_common.properties" />
-	<property file="${env}_brokersdetails.properties" />
+	<property file="@{env}_brokersdetails.properties" />
 	<property name="temp.dir" location="${build.dir}\temp" />
-	<property name="bar.file.dir" value="${build.dir}\BARfile" />
-
-	<target name="init" description="">
-		<tstamp>
-			<format property="buildTime" pattern="yyyyMMddHHmmss" />
-		</tstamp>
-		<mkdir dir="${build.dir}" />
-		<mkdir dir="${bar.file.dir}" />
-		<mkdir dir="${temp.dir}" />
-	</target>
-
-	<path id="groovy-classpath">
-		<pathelement location="${lib.dir}\\groovy-all-1.7.5.jar" />
-	</path>
-
-	<target name="build.deploy.bar" description="" depends="init">
-		<tstamp>
-			<format property="currentTime" pattern="yyyyMMddHHmmss" />
-		</tstamp>
-		<antcall target="build.bars" />
-	</target>
+	
 	<taskdef uri="antlib:net.sf.antcontrib" resource="net/sf/antcontrib/antlib.xml" >
 		<classpath>
 			<pathelement location="${lib.dir}/ant-contrib-1.0b3.jar"/>
 		</classpath>
 	</taskdef>
 	
+	
+	<target name="build.deploy.bar" description="" depends="check.env">
+		<tstamp>
+			<format property="currentTime" pattern="yyyyMMddHHmmss" />
+		</tstamp>
+		<antcall target="compile.projects"/>
+		<!--<antcall target="build.bars" />-->
+		<!-- <antcall target="javadoc" /> -->
+	</target>
+	
+	<target name="check.env">
+	<echo message="${ALL}" />
+	<antcontrib:if>
+		<equals arg1="${ALL}" arg2="ALL" />
+		<then>
+		<delete dir="${build.dir}" />
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="..\\build_dist\\temp" />
+		<mkdir dir="..\\build_dist\\javadoc" />
+		<antcontrib:for list="${env.list}" delimiter="," param="env">
+			<sequential>
+			<echo message="@{env}" />
+	<antcontrib:var name="bar.file.dir" value="..\\build_dist\\dist\\@{env}\\BARfile" />
+	<antcontrib:var name="jar.dir" value="..\\build_dist\\dist\\@{env}\\JARfile" />
+	<antcontrib:var name="instance.dir" value="..\\build_dist\\dist\\@{env}\\Instancefile" />
+		<mkdir dir="${bar.file.dir}" />
+		<mkdir dir="${jar.dir}" />
+        <mkdir dir="${instance.dir}" />		
+			</sequential>
+		</antcontrib:for>
+		</then>
+		<else>
+		<echo message="else" />
+	<antcontrib:var name="bar.file.dir" value="..\\build_dist\\dist\\${env}\\BARfile" />
+	<antcontrib:var name="jar.dir" value="..\\build_dist\\dist\\${env}\\JARfile" />
+	<antcontrib:var name="instance.dir" value="..\\build_dist\\dist\\${env}\\Instancefile" />
+		<antcall target="init" />
+		</else>
+		</antcontrib:if>
+	</target>
+	
+	<target name="init">
+		<tstamp>
+			<format property="buildTime" pattern="yyyyMMddHHmmss" />
+		</tstamp>
+		<delete dir="${build.dir}" />
+		<sleep seconds="2"/>
+		<mkdir dir="${build.dir}" />	
+		<mkdir dir="${build.dir}\\temp" />
+		<mkdir dir="${build.dir}\\javadoc" />
+		<mkdir dir="${bar.file.dir}" />
+		<mkdir dir="${jar.dir}" />	
+	</target>
+
+	<path id="groovy-classpath">
+		<pathelement location="${lib.dir}\\groovy-all-1.7.5.jar" />
+	</path>
+
+	
+	
+	
+	
 	<!--******************************************** -->
 	<!-- build.bars -->
 	<!--******************************************** -->
 
-	<target name="build.bars" depends="compile.projects">
+	<target name="build.bars">
 		<echo message="${bar.file.names} " />
 		<antcontrib:for list="${bar.file.names}" delimiter="," param="bar.file">
 			<sequential>
@@ -90,8 +132,6 @@
 					<arg value="${temp.dir}" />
 					<arg value="-a" />
 					<arg value="${bar.file.dir}/${bar.filename}.bar" />
-					<arg value="-version" />
-					<arg value="2.0v" />
 					<arg line="-o ${argln_Totalbar}" />
 					<classpath>
 						<fileset dir="${lib.dir}">
@@ -101,8 +141,20 @@
 				</java>
 			</sequential>
 		</antcontrib:for>
-		<delete dir="${temp.dir}" />
-		<antcall target="bar.override" />
+		
+		
+		
+		
+		<antcontrib:if>
+		<equals arg1="${env}" arg2="qa" />
+		<then>
+			<antcall target="bar.override" />
+			<antcall target="barlevel.override" />
+		</then>
+		<else>
+		</else>
+		</antcontrib:if>
+		
 	</target>
 
 
@@ -110,12 +162,13 @@
 	<!-- BAR override                               -->
 	<!--********************************************-->
 
-	<target name="bar.override">
+	<target name="bar.override">	
 		<loadproperties>
-			<file file="${sourcecode.dir}\\ESB_WW_CONFIG\\bin\\env\\${env}\\ESBEnvironment.properties" />
+			<file file="${sourcecode.dir}\\ESB_WW_CONFIG\\resources\\env\\${env}\\ESBEnvironment.properties" />
 		</loadproperties>
+		<echo message="${bar.override}" />
 		<antcontrib:for list="${bar.override}" delimiter="," param="bar.file.name">
-			<sequential>
+			<sequential>				
 				<porpertycopy name="baroverride.flowname" from="@{bar.file.name}.flowname" />
 				<porpertycopy name="baroverride.nodename" from="@{bar.file.name}.nodename" />
 				<porpertycopy name="baroverride.property" from="@{bar.file.name}.property" />
@@ -129,18 +182,95 @@
 			</sequential>
 		</antcontrib:for>
 	</target>
+	
+	<!--********************************************-->
+	<!-- BAR override startInstancesWhenFlowStarts  -->
+	<!--********************************************-->
 
+	<target name="barlevel.override">
+		<antcontrib:for list="${bar.override.startInstancesWhenFlowStarts}" delimiter="," param="bar.file.names">
+			<sequential>
+			<echo message="@{bar.file.names}" />
+				<exec executable="${toolkit.home}\mqsiapplybaroverride" vmlauncher="false" failonerror="true">
+					<arg value="-b" />
+					<arg value="${bar.file.dir}/@{bar.file.names}.bar" />
+					 <!--includes nested applications  -->
+					<arg value="-m" />
+					<arg line="${@{bar.file.names}.startInstances.flowname}#${@{bar.file.names}.startInstances.nodename}=${@{bar.file.names}.startInstances.value}" />
+				</exec>
+			</sequential>
+		</antcontrib:for>
+		<antcontrib:for list="${bar.override.addtionalInstances}" delimiter="," param="barfile.namelist">
+			<sequential>
+			<echo message="@{barfile.namelist}" />
+			<antcontrib:for list="${@{barfile.namelist}.addtionalInstance.instance_num}" delimiter="," param="instancenum">
+			<sequential>
+			<echo message="@{instancenum}" />
+			<antcontrib:if>
+			<available file="${bar.file.dir}" type="dir" property="BARfile_Instance_@{instancenum}"/>
+			<then>
+		<mkdir dir="${bar.file.dir}/BARfile_Instance_@{instancenum}" />
+			<copy todir="${bar.file.dir}/BARfile_Instance_@{instancenum}">
+					<fileset dir="${bar.file.dir}" includes="@{barfile.namelist}.bar" />
+				</copy> 
+			</then>
+			<else>
+			<copy todir="${bar.file.dir}/BARfile_Instance_@{instancenum}">
+					<fileset dir="${bar.file.dir}" includes="@{barfile.namelist}.bar" />
+				</copy> 
+			</else>
+			</antcontrib:if>
+				<exec executable="${toolkit.home}\mqsiapplybaroverride" vmlauncher="false" failonerror="true">
+					<arg value="-b" />
+					<arg value="${bar.file.dir}/BARfile_Instance_@{instancenum}/@{barfile.namelist}.bar" />
+					<!-- includes nested applications  -->
+					<arg value="-m" />
+					<arg line="${@{barfile.namelist}.addtionalInstance.flowname}#${@{barfile.namelist}.addtionalInstance.nodename}=@{instancenum}" />
+				</exec>
+				</sequential>
+		 </antcontrib:for>
+			</sequential>
+		</antcontrib:for>	
+	</target>
+
+	<target name="javadoc">
+	
+		<javadoc destdir="${javadoc.dir}" author="true" version="true" use="true"
+				windowtitle="EAI20">
+					<classpath>
+						<fileset dir="${lib.dir}">
+							<include name="*.jar" />
+						</fileset>
+						<fileset dir="${temp.dir}">
+							<include name="*.jar" />
+						</fileset>
+					</classpath>
+					
+					<fileset dir="${sourcecode.dir}" defaultexcludes="yes">	
+						<include name="**/*.java"/>				
+						<exclude name="**/*Test*.*"/>
+						<exclude name="bin"/>
+					</fileset>
+
+				<doctitle><![CDATA[<h1>EAI20</h1>]]></doctitle>
+				<bottom><![CDATA[<i>Copyright &#169; 2015 Walmart Corp. All Rights Reserved.</i>]]></bottom>
+				<tag name="todo" scope="all" description="To do:"/>
+				
+		</javadoc>		
+	</target>
+				
 	<!--******************************************** -->
 	<!-- Compile projects -->
 	<!--******************************************** -->
-	<target name="compile.projects" depends="init">
+	<target name="compile.projects">
 		<echo message="projects compiling ...." />
-		<antcontrib:for list="${jar.projects}" delimiter="," param="java.file.name">
+<mkdir dir="..\\build_dist\\bin" />		
+<antcontrib:for list="${jar.projects}" delimiter="," param="java.file.name">
 			<sequential>
 				<echo message="${sourcecode.dir}" />
-				<delete dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
+				
 				<mkdir dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
-				<javac srcdir="${sourcecode.dir}\\@{java.file.name}\\src" destdir="${sourcecode.dir}\\@{java.file.name}\\bin\\" includeantruntime="true">
+				<javac srcdir="${sourcecode.dir}\\@{java.file.name}\\src" destdir="..\\build_dist\\bin\\" includeantruntime="true">
 					<classpath>
 						<fileset dir="${lib.dir}">
 							<include name="*.jar" />
@@ -151,20 +281,40 @@
 					</classpath>
 				</javac>
 
-
-
+				<javac srcdir="${sourcecode.dir}\\@{java.file.name}\\src" destdir="${sourcecode.dir}\\@{java.file.name}\\bin\\" includeantruntime="true">
+					<classpath>
+						<fileset dir="${lib.dir}">
+							<include name="*.jar" />
+						</fileset>
+						<fileset dir="${temp.dir}">
+							<include name="*.jar" />
+						</fileset>
+					</classpath>
+				</javac>
+				
 				<antcontrib:switch value="@{java.file.name}">
 					<case value="ESB_WW_ZCACHE_ACCESSOR">
 						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
 							<fileset dir="${sourcecode.dir}\\@{java.file.name}\\resource">
 								<include name="*.properties" />
-								<include name="*.xml" />
+								<include name="**/*.*ml" />								
 								<include name="**" />
 							</fileset>
 						</copy>
-						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\log4j2.xml" replacefilterfile="${env}_brokersdetails.properties" />
-						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\log4j2.xml" replacefilterfile="${sourcecode.dir}\\ESB_WW_CONFIG\\resources\\env\\${env}\\ESBEnvironment.properties" />
+						
+						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\zcache\\distributed-cache.yaml" replacefilterfile="${sourcecode.dir}\\ESB_WW_CONFIG\\resources\\env\\${env}\\ESBEnvironment.properties" />
+						
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin"  
+						manifest="${sourcecode.dir}\\ESB_WW_ZCACHE_ACCESSOR\\META-INF\\MANIFEST.MF">
+							
 						</jar>
+						
+						<jar destfile="${jar.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin"   
+						manifest="${sourcecode.dir}\\ESB_WW_ZCACHE_ACCESSOR\\META-INF\\MANIFEST.MF">
+							
+						</jar>
+					
 					</case>
 					<case value="ESB_WW_CONFIG">
 						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
@@ -176,8 +326,13 @@
 						</copy>
 						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\ESBProperties.xml" replacefilterfile="${sourcecode.dir}\\@{java.file.name}\\bin\\env\\${env}\\ESBEnvironment.properties">
 						</replace>
-						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
-						</jar>
+						
+						<delete dir="${sourcecode.dir}\\@{java.file.name}\\bin\\env" />
+						
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin"/>
+						
+						<jar destfile="${jar.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin"/>
+						
 					</case>
 					<default>
 						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
@@ -190,7 +345,11 @@
 						</jar>
 					</default>
 				</antcontrib:switch>
-
+				
+				
+			
+			
+				<delete dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
 			</sequential>
 		</antcontrib:for>
 		<antcall target="copy.files" />

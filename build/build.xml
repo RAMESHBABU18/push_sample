@@ -7,7 +7,8 @@
 	<target name="run" description="">
 		<echo message="Invoking the broker master ant script file..." />
 		<ant antfile="eai_build.xml">
-			<property name="env" value="dev" />
+		    <property name="ALL" value="ALL" />
+			<property name="env.list" value="dev,fut,qa" />
 		</ant>
 		<echo message="***********************************************************" />
 		<echo
@@ -19,13 +20,18 @@
 	<!-- Target's for Build -->
 	<!--************************************************* -->
 	<target name="dev.build.bar">
-		<ant antfile="eai_build.xml" target="build.bars">
+		<ant antfile="eai_build.xml" target="build.deploy.bar">
 			<property name="env" value="dev" />
 		</ant>
 	</target>
-	<target name="fut.build.bars">
-		<ant antfile="eai_build.xml" target="build.bars">
+	<target name="fut.build.bar">
+		<ant antfile="eai_build.xml" target="build.deploy.bar">
 			<property name="env" value="fut" />
+		</ant>
+	</target>
+  <target name="qa.build.bar">
+		<ant antfile="eai_build.xml" target="build.deploy.bar">
+			<property name="env" value="qa" />
 		</ant>
 	</target>
 
