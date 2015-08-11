@@ -1,19 +1,31 @@
 <?xml version="1.0"?>
-<project name="eai.build.deploy" default="build.deploy.bar"
-	basedir=".">
-	<taskdef resource="net/sf/antcontrib/antlib.xml" />	
+<project name="eai.build.deploy" default="build.deploy.bar"  xmlns:antcontrib="antlib:net.sf.antcontrib" basedir=".">
+
+	<macrodef name="porpertycopy">
+		<attribute name="name" />
+		<attribute name="from" />
+		<sequential>
+			<property name="@{name}" value="${@{from}}" />
+		</sequential>
+	</macrodef>
+
+	<property file="eai_build_common.properties" />
+	<property file="${env}_brokersdetails.properties" />
+	<property name="temp.dir" location="${build.dir}\temp" />
+	<property name="bar.file.dir" value="${build.dir}\BARfile" />
+
 	<target name="init" description="">
 		<tstamp>
 			<format property="buildTime" pattern="yyyyMMddHHmmss" />
 		</tstamp>
-		<property file="eai_build_common.properties" />
-		<property file="${env}_brokersdetails.properties" />
-        <property name="temp.dir" location="${build.dir}\temp" />	
-	    <property name="bar.file.dir" value="${build.dir}\BARfile" />
 		<mkdir dir="${build.dir}" />
 		<mkdir dir="${bar.file.dir}" />
 		<mkdir dir="${temp.dir}" />
 	</target>
+
+	<path id="groovy-classpath">
+		<pathelement location="${lib.dir}\\groovy-all-1.7.5.jar" />
+	</path>
 
 	<target name="build.deploy.bar" description="" depends="init">
 		<tstamp>
@@ -21,101 +33,114 @@
 		</tstamp>
 		<antcall target="build.bars" />
 	</target>
-
+	<taskdef uri="antlib:net.sf.antcontrib" resource="net/sf/antcontrib/antlib.xml" >
+		<classpath>
+			<pathelement location="${lib.dir}/ant-contrib-1.0b3.jar"/>
+		</classpath>
+	</taskdef>
+	
 	<!--******************************************** -->
 	<!-- build.bars -->
 	<!--******************************************** -->
 
 	<target name="build.bars" depends="compile.projects">
 		<echo message="${bar.file.names} " />
-		<for list="${bar.file.names}" delimiter="," param="bar.file">
+		<antcontrib:for list="${bar.file.names}" delimiter="," param="bar.file">
 			<sequential>
 				<echo message="@{bar.file}" />
-				<var name="bar.filename" value="@{bar.file}" />
-				<propertyregex property="argln_broker_projects"
-					override="true" input="${@{bar.file}_projects}" regexp="\,"
-					replace="\\\\, " global="false" defaultValue="${@{bar.file}_projects}" />
-				<propertyregex property="argln_broker_msgflows"
-					override="true" input="${@{bar.file}_msgflows}" regexp="\,"
-					replace="\\\\, " global="false" defaultValue="${@{bar.file}_msgflows}" />
-				<if>
+				<antcontrib:var name="bar.filename" value="@{bar.file}" />
+				<antcontrib:propertyregex property="argln_broker_projects" override="true" input="${@{bar.file}_projects}" regexp="\," replace="\\\\, " global="false" defaultValue="${@{bar.file}_projects}" />
+				<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="${@{bar.file}_msgflows}" regexp="\," replace="\\\\, " global="false" defaultValue="${@{bar.file}_msgflows}" />
+				<antcontrib:if>
 					<equals arg1="${@{bar.file}_msgflows}" arg2="NO_MSG_FLOWS" />
 					<then>
-						<var name="argln_Totalbar" value="" />
-						<for list="${argln_broker_projects}" delimiter="," param="jar.file">
+						<antcontrib:var name="argln_Totalbar" value="" />
+						<antcontrib:for list="${argln_broker_projects}" delimiter="," param="jar.file">
 							<sequential>
-								<propertyregex property="argln_java_projects"
-									override="true" input="@{jar.file}" regexp="\\" replace=""
-									global="false" defaultValue="@{jar.file}" />
-								<propertyregex property="argln_java_projects"
-									override="true" input="${argln_java_projects}" regexp=" "
-									replace="" global="false" defaultValue="${argln_java_projects}" />
-								<var name="argln_Totalbar" value="${argln_Totalbar} ${argln_java_projects}.jar" />
+								<antcontrib:propertyregex property="argln_java_projects" override="true" input="@{jar.file}" regexp="\\" replace="" global="false" defaultValue="@{jar.file}" />
+								<antcontrib:propertyregex property="argln_java_projects" override="true" input="${argln_java_projects}" regexp=" " replace="" global="false" defaultValue="${argln_java_projects}" />
+								<antcontrib:var name="argln_Totalbar" value="${argln_Totalbar} ${argln_java_projects}.jar" />
 							</sequential>
-						</for>
+						</antcontrib:for>
 					</then>
 					<else>
-						<var name="argln_jars" value="" />
-						<for list="${argln_broker_projects}" delimiter="," param="jar.file">
+						<antcontrib:var name="argln_jars" value="" />
+						<antcontrib:for list="${argln_broker_projects}" delimiter="," param="jar.file">
 							<sequential>
 								<echo message="@{jar.file} " />
-								<propertyregex property="argln_java_projects"
-									override="true" input="@{jar.file}" regexp="\\" replace=""
-									global="false" defaultValue="@{jar.file}" />
-								<propertyregex property="argln_java_projects"
-									override="true" input="${argln_java_projects}" regexp=" "
-									replace="" global="false" defaultValue="${argln_java_projects}" />
-								<var name="argln_jars" value="${argln_jars} ${argln_java_projects}.jar" />
+								<antcontrib:propertyregex property="argln_java_projects" override="true" input="@{jar.file}" regexp="\\" replace="" global="false" defaultValue="@{jar.file}" />
+								<antcontrib:propertyregex property="argln_java_projects" override="true" input="${argln_java_projects}" regexp=" " replace="" global="false" defaultValue="${argln_java_projects}" />
+								<antcontrib:var name="argln_jars" value="${argln_jars} ${argln_java_projects}.jar" />
 							</sequential>
-						</for>
-						<var name="argln_flows" value="" />
-						<for list="${argln_broker_msgflows}" delimiter="," param="flow.file">
+						</antcontrib:for>
+						<antcontrib:var name="argln_flows" value="" />
+						<antcontrib:for list="${argln_broker_msgflows}" delimiter="," param="flow.file">
 							<sequential>
 								<echo message="@{flow.file} " />
-								<propertyregex property="argln_broker_msgflows"
-									override="true" input="@{flow.file}" regexp="\\" replace=""
-									global="false" defaultValue="@{flow.file}" />
-								<propertyregex property="argln_broker_msgflows"
-									override="true" input="${argln_broker_msgflows}" regexp=" "
-									replace="" global="false" defaultValue="${argln_broker_msgflows}" />
-								<var name="argln_flows" value="${argln_flows} ${argln_broker_msgflows}" />
+								<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="@{flow.file}" regexp="\\" replace="" global="false" defaultValue="@{flow.file}" />
+								<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="${argln_broker_msgflows}" regexp=" " replace="" global="false" defaultValue="${argln_broker_msgflows}" />
+								<antcontrib:var name="argln_flows" value="${argln_flows} ${argln_broker_msgflows}" />
 							</sequential>
-						</for>
-						<var name="argln_Totalbar" value="${argln_jars} ${argln_flows}" />
+						</antcontrib:for>
+						<antcontrib:var name="argln_Totalbar" value="${argln_jars} ${argln_flows}" />
 					</else>
-				</if>
-				<java classname="com.ibm.broker.config.appdev.FlowRendererBAR"
-					failonerror="true" fork="true">
+				</antcontrib:if>
+				<java classname="com.ibm.broker.config.appdev.FlowRendererBAR" failonerror="true" fork="true">
 					<arg value="-w" />
 					<arg value="${temp.dir}" />
 					<arg value="-a" />
 					<arg value="${bar.file.dir}/${bar.filename}.bar" />
+					<arg value="-version" />
+					<arg value="2.0v" />
 					<arg line="-o ${argln_Totalbar}" />
 					<classpath>
-						<fileset dir="${lib.dir}\\mqlib">
+						<fileset dir="${lib.dir}">
 							<include name="*.jar" />
 						</fileset>
 					</classpath>
 				</java>
 			</sequential>
-		</for>
-		<delete dir="${temp.dir}"/>
+		</antcontrib:for>
+		<delete dir="${temp.dir}" />
+		<antcall target="bar.override" />
 	</target>
 
+
+	<!--********************************************-->
+	<!-- BAR override                               -->
+	<!--********************************************-->
+
+	<target name="bar.override">
+		<loadproperties>
+			<file file="${sourcecode.dir}\\ESB_WW_CONFIG\\bin\\env\\${env}\\ESBEnvironment.properties" />
+		</loadproperties>
+		<antcontrib:for list="${bar.override}" delimiter="," param="bar.file.name">
+			<sequential>
+				<porpertycopy name="baroverride.flowname" from="@{bar.file.name}.flowname" />
+				<porpertycopy name="baroverride.nodename" from="@{bar.file.name}.nodename" />
+				<porpertycopy name="baroverride.property" from="@{bar.file.name}.property" />
+				<exec executable="${toolkit.home}\mqsiapplybaroverride" vmlauncher="false" failonerror="true">
+					<arg value="-b" />
+					<arg value="${bar.file.dir}/@{bar.file.name}.bar" />
+					<!-- includes nested applications  -->
+					<arg value="-m" />
+					<arg line="${baroverride.flowname}#${baroverride.nodename}.${baroverride.property}=${timeoutInterval}" />
+				</exec>
+			</sequential>
+		</antcontrib:for>
+	</target>
 
 	<!--******************************************** -->
 	<!-- Compile projects -->
 	<!--******************************************** -->
-	<target name="compile.projects">
+	<target name="compile.projects" depends="init">
 		<echo message="projects compiling ...." />
-		<for list="${jar.projects}" delimiter="," param="java.file.name">
+		<antcontrib:for list="${jar.projects}" delimiter="," param="java.file.name">
 			<sequential>
 				<echo message="${sourcecode.dir}" />
 				<delete dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
 				<mkdir dir="${sourcecode.dir}\\@{java.file.name}\\bin" />
-				<javac srcdir="${sourcecode.dir}\\@{java.file.name}\\src"
-					destdir="${sourcecode.dir}\\@{java.file.name}\\bin\\"
-					includeantruntime="true" >
+				<javac srcdir="${sourcecode.dir}\\@{java.file.name}\\src" destdir="${sourcecode.dir}\\@{java.file.name}\\bin\\" includeantruntime="true">
 					<classpath>
 						<fileset dir="${lib.dir}">
 							<include name="*.jar" />
@@ -124,12 +149,12 @@
 							<include name="*.jar" />
 						</fileset>
 					</classpath>
-				</javac>				
-				
-				<if>
-					<available file="${sourcecode.dir}\\@{java.file.name}\\resource"
-						type="dir" />
-					<then>
+				</javac>
+
+
+
+				<antcontrib:switch value="@{java.file.name}">
+					<case value="ESB_WW_ZCACHE_ACCESSOR">
 						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
 							<fileset dir="${sourcecode.dir}\\@{java.file.name}\\resource">
 								<include name="*.properties" />
@@ -137,46 +162,37 @@
 								<include name="**" />
 							</fileset>
 						</copy>
-					</then>
-					<else>
+						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\log4j2.xml" replacefilterfile="${env}_brokersdetails.properties" />
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						</jar>
+					</case>
+					<case value="ESB_WW_CONFIG">
+						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
+							<fileset dir="${sourcecode.dir}\\@{java.file.name}\\resources">
+								<include name="*.properties" />
+								<include name="*.xml" />
+								<include name="**" />
+							</fileset>
+						</copy>
+						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\ESBProperties.xml" replacefilterfile="${sourcecode.dir}\\@{java.file.name}\\bin\\env\\${env}\\ESBEnvironment.properties">
+						</replace>
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						</jar>
+					</case>
+					<default>
 						<copy todir="${sourcecode.dir}\\@{java.file.name}\\bin">
 							<fileset dir="${sourcecode.dir}\\@{java.file.name}">
 								<include name="**/*.properties" />
 								<include name="**/*.xml" />
 							</fileset>
 						</copy>
-					</else>
-				</if>
-				
-				<if>
-				<equals arg1="@{java.file.name}" arg2="ESB_WW_CONFIG" />
-				<then>
-				<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\props\\ESBProperties.xml"
-							replacefilterfile="${sourcecode.dir}\\@{java.file.name}\\bin\\env\\${env}\\ESBEnvironment.properties">						
-						</replace>	
-						<jar destfile="${temp.dir}\\@{java.file.name}.jar"
-							basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
+						<jar destfile="${temp.dir}\\@{java.file.name}.jar" basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
 						</jar>
-				</then>
-				</if>
+					</default>
+				</antcontrib:switch>
 
-				<if>
-					<equals arg1="@{java.file.name}" arg2="ESB_WW_ZCACHE_ACCESSOR" />
-					<then>
-						<replace file="${sourcecode.dir}\\@{java.file.name}\\bin\\log4j2.xml"
-							replacefilterfile="${env}_brokersdetails.properties" />
-						<jar destfile="${temp.dir}\\@{java.file.name}.jar"
-							basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
-						</jar>
-					</then>
-					<else>
-						<jar destfile="${temp.dir}\\@{java.file.name}.jar"
-							basedir="${sourcecode.dir}\\@{java.file.name}\\bin">
-						</jar>
-					</else>
-				</if>
 			</sequential>
-		</for>
+		</antcontrib:for>
 		<antcall target="copy.files" />
 	</target>
 
@@ -185,14 +201,13 @@
 	<!-- Copy flow files to temp location -->
 	<!--******************************************** -->
 	<target name="copy.files">
-		<for list="${project.file.names}" delimiter="," param="project.file.name">
+		<antcontrib:for list="${project.file.names}" delimiter="," param="project.file.name">
 			<sequential>
 				<copy todir="${temp.dir}">
-					<fileset dir="${sourcecode.dir}\\@{project.file.name}\\"
-						includes="*.msgflow,*.subflow,*.esql" />
+					<fileset dir="${sourcecode.dir}\\@{project.file.name}\\" includes="*.msgflow,*.subflow,*.esql" />
 				</copy>
 			</sequential>
-		</for>
+		</antcontrib:for>
 	</target>
 
 
@@ -200,38 +215,230 @@
 	<!--************************************************* -->
 	<!-- The target for deploying the Broker Archive file. -->
 	<!--************************************************* -->
-	<target name="deploy.bar" depends="init" description="Deploying barfile">
-		<for list="${hosts.list}" delimiter="," param="brokerHostName">
+	<target name="deploy.bar" description="Deploying barfile">
+		<antcontrib:for list="${hosts.list}" delimiter="," param="brokerHostName">
 			<sequential>
-				<for list="${@{brokerHostName}.brokers.list}" delimiter=","
-					param="borker.name">
+				<antcontrib:for list="${@{brokerHostName}.brokers.list}" delimiter="," param="broker.name">
 					<sequential>
-						<for list="${@{borker.name}.eg.list}" delimiter=","
-							param="borker.execgroup.name">
+						<antcontrib:for list="${@{broker.name}.eg.list}" delimiter="," param="broker.execgroup.name">
 							<sequential>
-								<for list="${@{borker.name}.@{borker.execgroup.name}.bar.list}"
-									delimiter="," param="bar.file">
+								<antcontrib:for list="${@{broker.name}.@{broker.execgroup.name}.bar.list}" delimiter="," param="bar.file">
 									<sequential>
-										<java classname="DeployBAR" failonerror="true" fork="true">
-											<classpath>
-												<fileset dir="${lib.dir}\\mqlib">
-													<include name="*.jar" />
-												</fileset>
-											</classpath>
-											<arg value="@{brokerHostName}" /><!--brokerHostName -->
-											<arg value="${@{borker.name}.port}" /><!--brokerPort -->
-											<arg value="${@{borker.name}.queue.manager}" /><!--brokerQmgrName -->
-											<arg value="@{borker.execgroup.name}" /><!--executionGroupName -->
-											<arg value="${bar.file.dir}/@{bar.file}.bar" /><!--barFileName -->
-										</java>
+										<porpertycopy name="env.username" from="@{brokerHostName}.username" />
+										<antcontrib:var name="HOST" value="@{brokerHostName}" />
+										<porpertycopy name="remote.path" from="@{brokerHostName}.bar.path" />
+										<porpertycopy name="broker.runtime.location" from="@{brokerHostName}.runtime.location" />											
+									<!--	<scp trust="true" todir="${env.username}@${HOST}:${remote.path}" keyfile="${basedir}\${keyfile.name}">
+											<fileset dir="${bar.file.dir}">
+												<include name="@{bar.file}.bar" />
+											</fileset>
+										</scp>
+										<sshexec trust="true" host="@{brokerHostName}" username="${env.username}" keyfile="${basedir}\${keyfile.name}" command="cd ${broker.runtime.location};. ./mqsiprofile;./mqsideploy @{broker.name} -e @{broker.execgroup.name} -a /home/miracle/Barfile/@{bar.file}.bar">
+										</sshexec>	-->
+           <ant  target="deploybar">				
+				<property name="usrId" value="${env.username}"/>
+				<property name="keyfile" value="${basedir}\${keyfile.name}"/>
+				<property name="toHost" value="${HOST}"/>	
+				<property name="toFolder"  value="${remote.path}" />	
+				<property name="fromDir"  value="${bar.file.dir}" />	
+				<property name="commands"  value="cd ${broker.runtime.location};. ./mqsiprofile;./mqsideploy @{broker.name} -e @{broker.execgroup.name} -a ${remote.path}/@{bar.file}.bar" />				
+			</ant>										
 									</sequential>
-								</for>
+								</antcontrib:for>
 							</sequential>
-						</for>
+						</antcontrib:for>
 					</sequential>
-				</for>
+				</antcontrib:for>
 			</sequential>
-		</for>
-		<delete dir="${build.dir}"/>
+		</antcontrib:for>
+		<delete dir="${build.dir}" />
 	</target>
+
+
+
+	<!--************************************************* -->
+	<!-- The target for undeploy process dependce. -->
+	<!--************************************************* -->
+	<target name="undeploy.dependce" description="Deleteing barfile">
+		<antcontrib:for list="${hosts.list}" delimiter="," param="brokerHostName">
+			<sequential>
+				<antcontrib:for list="${@{brokerHostName}.brokers.list}" delimiter="," param="broker.name">
+					<sequential>
+						<antcontrib:for list="${@{broker.name}.eg.list}" delimiter="," param="broker.execgroup.name">
+							<sequential>
+								<antcontrib:var name="key" value="${@{broker.name}.@{broker.execgroup.name}.bar.list}" />
+								<echo>Original ${key}</echo>
+								<!--<echo>${key}</echo> -->
+								<script language="groovy" classpathref="groovy-classpath">		   
+              def components = key.split(',').reverse().join(',')
+              def project = self.project
+              project.setProperty('bar_list', components)
+           </script>
+								<echo>Reverse ${bar_list}</echo>
+								<antcontrib:for list="${bar_list}" delimiter="," param="bar.file">
+									<sequential>
+										<antcontrib:var name="bar.filename" value="@{bar.file}" />
+										<antcontrib:for list="${bar.filename}" delimiter="," param="Delete.file">
+											<sequential>
+												<antcontrib:var name="delete.filename" value="@{Delete.file}" />
+												<antcontrib:propertyregex property="argln_broker_projects" override="true" input="${@{Delete.file}_projects}" regexp="\," replace="\\\\, " global="false" defaultValue="${@{Delete.file}_projects}" />
+												<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="${@{Delete.file}_msgflows}" regexp="\," replace="\\\\, " global="false" defaultValue="${@{Delete.file}_msgflows}" />
+												<antcontrib:if>
+													<equals arg1="${@{Delete.file}_msgflows}" arg2="NO_MSG_FLOWS" />
+													<then>
+													</then>
+													<else>
+
+														<antcontrib:var name="argln_flows" value="" />
+														<antcontrib:for list="${argln_broker_msgflows}" delimiter="," param="flow.file">
+															<sequential>
+																<echo message="@{flow.file} " />
+																<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="@{flow.file}" regexp="\\" replace="" global="false" defaultValue="@{flow.file}" />
+																<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="${argln_broker_msgflows}" regexp=" " replace="" global="false" defaultValue="${argln_broker_msgflows}" />
+																<antcontrib:var name="flowname" value="${argln_broker_msgflows}" />
+																<antcontrib:if>
+																	<contains substring=".msgflow" string="${argln_broker_msgflows}" />
+																	<then>
+																		<porpertycopy name="broker.runtime.location" from="@{brokerHostName}.runtime.location" />
+																		<antcontrib:propertyregex property="flowname" override="true" input="${flowname}" regexp=".msgflow" replace="" global="false" defaultValue="${flowname}" />
+																		<porpertycopy name="env.username" from="@{brokerHostName}.username" />
+																		<!--<sshexec trust="true" host="@{brokerHostName}" username="${env.username}" keyfile="${basedir}\${keyfile.name}" command="cd ${broker.runtime.location};. ./mqsiprofile;./mqsistopmsgflow @{broker.name} -e @{broker.execgroup.name} -m ${flowname}">
+																		</sshexec>-->
+		  <ant  target="undeploy.flow.bar">				
+				<property name="usrId" value="${env.username}"/>
+				<property name="keyfile" value="${basedir}\${keyfile.name}"/>
+				<property name="toHost" value="@{brokerHostName}"/>		
+				<property name="commands"  value="cd ${broker.runtime.location};. ./mqsiprofile;./mqsistopmsgflow @{broker.name} -e @{broker.execgroup.name} -m ${flowname}" />				
+			</ant>
+																		
+																		<!--<sshexec failonerror="false" trust="true" host="@{brokerHostName}" username="${env.username}" keyfile="${basedir}\${keyfile.name}" command="cd ${broker.runtime.location};. ./mqsiprofile;./mqsideploy @{broker.name} -e @{broker.execgroup.name} -d ${flowname}">
+																		</sshexec>-->
+		<ant  target="undeploy.flow.bar">				
+				<property name="usrId" value="${env.username}"/>
+				<property name="keyfile" value="${basedir}\${keyfile.name}"/>
+				<property name="toHost" value="@{brokerHostName}"/>		
+				<property name="commands"  value="cd ${broker.runtime.location};. ./mqsiprofile;./mqsideploy @{broker.name} -e @{broker.execgroup.name} -d ${flowname}" />				
+			</ant>		
+																	</then>
+																	<else>
+																	</else>
+																</antcontrib:if>
+															</sequential>
+														</antcontrib:for>
+													</else>
+												</antcontrib:if>
+
+											</sequential>
+										</antcontrib:for>
+
+
+									</sequential>
+								</antcontrib:for>
+
+							</sequential>
+						</antcontrib:for>
+					</sequential>
+				</antcontrib:for>
+			</sequential>
+		</antcontrib:for>
+
+	</target>
+
+
+	<!--************************************************* -->
+	<!-- The target for deleting the Broker Archive file. -->
+	<!--************************************************* -->
+	<target name="undeploy.bar" depends="undeploy.dependce" description="Deleteing barfile">
+		<property environment="envron" />
+		<antcontrib:for list="${hosts.list}" delimiter="," param="brokerHostName">
+			<sequential>
+				<antcontrib:for list="${@{brokerHostName}.brokers.list}" delimiter="," param="broker.name">
+					<sequential>
+						<antcontrib:for list="${@{broker.name}.eg.list}" delimiter="," param="broker.execgroup.name">
+							<sequential>
+								<antcontrib:var name="key" value="${@{broker.name}.@{broker.execgroup.name}.bar.list}" />
+								<echo>Original ${key}</echo>
+								<!--<echo>${key}</echo> -->
+								<script language="groovy" classpathref="groovy-classpath">		   
+              def components = key.split(',').reverse().join(',')
+              def project = self.project
+              project.setProperty('bar_list', components)
+           </script>
+								<echo>Reverse ${bar_list}</echo>
+								<antcontrib:for list="${bar_list}" delimiter="," param="bar.file">
+									<sequential>
+										<antcontrib:var name="bar.filename" value="@{bar.file}" />
+										<antcontrib:for list="${bar.filename}" delimiter="," param="Delete.file">
+											<sequential>
+												<echo message="@{Delete.file}" />
+												<antcontrib:var name="delete.filename" value="@{Delete.file}" />
+												<antcontrib:propertyregex property="argln_broker_projects" override="true" input="${@{Delete.file}_projects}" regexp="\," replace="\\\\, " global="false" defaultValue="${@{Delete.file}_projects}" />
+												<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="${@{Delete.file}_msgflows}" regexp="\," replace="\\\\, " global="false" defaultValue="${@{Delete.file}_msgflows}" />
+												<antcontrib:if>
+													<equals arg1="${@{Delete.file}_msgflows}" arg2="NO_MSG_FLOWS" />
+													<then>
+														<antcontrib:var name="argln_Totalbar" value="" />
+														<antcontrib:for list="${argln_broker_projects}" delimiter="," param="jar.file">
+															<sequential>
+																<antcontrib:propertyregex property="argln_java_projects" override="true" input="@{jar.file}" regexp="\\" replace="" global="false" defaultValue="@{jar.file}" />
+																<antcontrib:propertyregex property="argln_java_projects" override="true" input="${argln_java_projects}" regexp=" " replace="" global="false" defaultValue="${argln_java_projects}" />
+																<antcontrib:var name="argln_Totalbar" value="${argln_Totalbar}${argln_java_projects}.jar:" />
+															</sequential>
+														</antcontrib:for>
+													</then>
+													<else>
+														<antcontrib:var name="argln_jars" value="" />
+														<antcontrib:for list="${argln_broker_projects}" delimiter="," param="jar.file">
+															<sequential>
+																<echo message="@{jar.file} " />
+																<antcontrib:propertyregex property="argln_java_projects" override="true" input="@{jar.file}" regexp="\\" replace="" global="false" defaultValue="@{jar.file}" />
+																<antcontrib:propertyregex property="argln_java_projects" override="true" input="${argln_java_projects}" regexp=" " replace="" global="false" defaultValue="${argln_java_projects}" />
+																<antcontrib:var name="argln_jars" value="${argln_jars}${argln_java_projects}.jar:" />
+															</sequential>
+														</antcontrib:for>
+														<antcontrib:var name="argln_flows" value="" />
+														<antcontrib:for list="${argln_broker_msgflows}" delimiter="," param="flow.file">
+															<sequential>
+																<echo message="@{flow.file} " />
+																<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="@{flow.file}" regexp="\\" replace="" global="false" defaultValue="@{flow.file}" />
+																<antcontrib:propertyregex property="argln_broker_msgflows" override="true" input="${argln_broker_msgflows}" regexp=" " replace="" global="false" defaultValue="${argln_broker_msgflows}" />
+																<antcontrib:var name="flowname" value="${argln_broker_msgflows}" />
+																<antcontrib:if>
+																	<contains substring=".msgflow" string="${argln_broker_msgflows}" />
+																	<then>
+																		<antcontrib:propertyregex property="flowname" override="true" input="${flowname}" regexp="${argln_broker_msgflows}" replace="" global="false" defaultValue="${flowname}" />
+
+																	</then>
+																	<else>
+																	</else>
+																</antcontrib:if>
+																<antcontrib:var name="argln_flows" value="${argln_flows}${flowname}:" />
+															</sequential>
+														</antcontrib:for>
+														<antcontrib:var name="argln_Totalbar" value="${argln_jars}${argln_flows}" />
+													</else>
+												</antcontrib:if>
+												<echo>TotalArg ${argln_Totalbar}</echo>
+												<porpertycopy name="broker.runtime.location" from="@{brokerHostName}.runtime.location" />
+												<porpertycopy name="env.username" from="@{brokerHostName}.username" />
+												<!--<sshexec failonerror="false" trust="true" host="@{brokerHostName}" username="${env.username}" keyfile="${basedir}\${keyfile.name}" command="cd ${broker.runtime.location};. ./mqsiprofile;./mqsideploy @{broker.name} -e @{broker.execgroup.name} -d ${argln_Totalbar}">
+												</sshexec>-->
+											<ant  target="undeploy.flow.bar">				
+				<property name="usrId" value="${env.username}"/>
+				<property name="keyfile" value="${basedir}\${keyfile.name}"/>
+				<property name="toHost" value="@{brokerHostName}"/>		
+				<property name="commands"  value="cd ${broker.runtime.location};. ./mqsiprofile;./mqsideploy @{broker.name} -e @{broker.execgroup.name} -d ${argln_Totalbar}" />				
+			</ant>	
+											</sequential>
+										</antcontrib:for>
+									</sequential>
+								</antcontrib:for>
+							</sequential>
+						</antcontrib:for>
+					</sequential>
+				</antcontrib:for>
+			</sequential>
+		</antcontrib:for>
+	</target>
+
 </project>

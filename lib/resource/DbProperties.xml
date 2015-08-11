@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<Properties>
-<property name="DataSource"     value="DB2JdbcProvider"/>
-<property name="SchemaName"     value="EAI2DEV"/>
-<property name="GlobalServicesVW" value="GLOBAL_SERVICES_VW"/>
-<property name="PropertyValTableName" value="Property_Sequence"/>
-</Properties>

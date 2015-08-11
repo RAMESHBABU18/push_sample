@@ -1,15 +1,24 @@
 <?xml version="1.0"?>
 <project name="eai.build.deploy" default="run">
+
+	<!--************************************************* -->
+	<!-- Default target for Build -->
+	<!--************************************************* -->
 	<target name="run" description="">
 		<echo message="Invoking the broker master ant script file..." />
 		<ant antfile="eai_build.xml">
-		<property name="env" value="dev"/>
+			<property name="env" value="dev" />
 		</ant>
 		<echo message="***********************************************************" />
-		<echo message="*****Broker Auto Build and Deploy is Successfully Complete.*****" />
+		<echo
+			message="*****Broker Auto Build and Deploy is Successfully Complete.*****" />
 		<echo message="***********************************************************" />
 	</target>
-	<target name="dev.build.bars">
+
+	<!--************************************************* -->
+	<!-- Target's for Build -->
+	<!--************************************************* -->
+	<target name="dev.build.bar">
 		<ant antfile="eai_build.xml" target="build.bars">
 			<property name="env" value="dev" />
 		</ant>
@@ -19,6 +28,10 @@
 			<property name="env" value="fut" />
 		</ant>
 	</target>
+
+	<!--************************************************* -->
+	<!-- Target's for Deploy -->
+	<!--************************************************* -->
 	<target name="dev.deploy.bar">
 		<ant antfile="eai_build.xml" target="deploy.bar">
 			<property name="env" value="dev" />
@@ -29,4 +42,134 @@
 			<property name="env" value="fut" />
 		</ant>
 	</target>
+
+	<!--************************************************* -->
+	<!-- Target's for Undeploy -->
+	<!--************************************************* -->
+	<target name="dev.undeploy.bar">
+		<ant antfile="eai_build.xml" target="undeploy.bar">
+			<property name="env" value="dev" />
+		</ant>
+	</target>
+
+
+	<!--************************************************* -->
+	<!-- Target's for STOP Broker -->
+	<!--************************************************* -->
+	<target name="dev.stop.broker">
+		<ant antfile="Stop_Start_Function.xml" target="stop.broker">
+			<property name="env" value="dev" />	
+			<property name="host" value="" />
+			<property name="broker.name" value="" />
+		</ant>
+	</target>
+
+	<!--************************************************* -->
+	<!-- Target's for START Broker -->
+	<!--************************************************* -->
+	<target name="dev.start.broker">
+		<ant antfile="Stop_Start_Function.xml" target="start.broker">
+			<property name="env" value="dev" />	
+			<property name="host" value="" />
+			<property name="broker.name" value="" />			
+		</ant>
+	</target>
+	
+	<!--************************************************* -->
+	<!-- Target's for START MessageFlow -->
+	<!--************************************************* -->
+	<target name="dev.start.msgflow">
+		<ant antfile="Stop_Start_Function.xml" target="start.messageflow">
+			<property name="env" value="dev" />	
+			<property name="host" value="" />
+			<property name="broker.name" value="" />
+            <property name="egname" value="" />
+			<property name="flowname" value="" />			
+		</ant>
+	</target>
+	
+	<!--************************************************* -->
+	<!-- Target's for STOP MessageFlow -->
+	<!--************************************************* -->
+	<target name="dev.stop.msgflow">
+		<ant antfile="Stop_Start_Function.xml" target="stop.messageflow">
+			<property name="env" value="dev" />	
+			<property name="host" value="" />
+			<property name="broker.name" value="" />
+            <property name="egname" value="" />
+			<property name="flowname" value="" />			
+		</ant>
+	</target>
+	
+	<!--******************************************************************************************************* -->
+	<target name="deploybar">
+		<java classname="org.apache.tools.ant.launch.Launcher"	fork="true" dir="${basedir}" taskname="ant+deploy+bar">
+			<classpath>
+				<pathelement location="${lib.dir}/jsch-0.1.50.jar"/>
+				<pathelement location="${ant.home}/lib/ant-launcher.jar"/>
+			</classpath>
+			<arg value="-DfromDir=${fromDir}"/> 
+			<arg value="-Dtodir=${toFolder}"/>
+			<arg value="-DtoHost=${toHost}"/>
+			<arg value="-DusrId=${usrId}"/>
+			<arg value="-Dkeyfile=${keyfile}"/>
+			<arg value="-Dcommands=${commands}"/>
+			<arg value="deploybar.scp"/>
+		</java>
+	</target>
+ 
+	<target name="deploybar.scp">
+		<echo message="Sending to ${toHost} ${todir} using ${usrId} **** "/>			
+		<scp trust="true" todir="${usrId}@${toHost}:${todir}" keyfile="${keyfile}">
+			<fileset dir="${fromDir}" >	
+				<include name="**/*.jar"/>
+			</fileset>	
+		</scp>	
+		<sshexec trust="true" host="${toHost}" username="${usrId}" keyfile="${keyfile}"		
+				usepty="true" command="${commands}">
+		</sshexec>			
+	</target>
+	
+	<target name="undeploy.flow.bar">
+		<java classname="org.apache.tools.ant.launch.Launcher"	fork="true" dir="${basedir}" taskname="ant+undeploy+flow+bar">
+			<classpath>
+				<pathelement location="${lib.dir}/jsch-0.1.50.jar"/>
+				<pathelement location="${ant.home}/lib/ant-launcher.jar"/>
+			</classpath>
+			<arg value="-DtoHost=${toHost}"/>
+			<arg value="-DusrId=${usrId}"/>
+			<arg value="-Dkeyfile=${keyfile}"/>
+			<arg value="-Dcommands=${commands}"/>
+			<arg value="undeploy.flow.bar.ssh"/>
+		</java>
+	</target>	
+	<target name="undeploy.flow.bar.ssh">
+		<echo message="undeploy message flow  and bar file ${toHost} using ${usrId} **** "/>			
+		<sshexec failonerror="false" trust="true" host="${toHost}" username="${usrId}" keyfile="${keyfile}"		
+				usepty="true" command="${commands}">
+		</sshexec>			
+	</target>
+	
+	
+	
+	<target name="common.function">
+		<java classname="org.apache.tools.ant.launch.Launcher"	fork="true" dir="${basedir}" taskname="ant+stop+start+function">
+			<classpath>
+			    <pathelement location="${ant.home}/lib/ant-launcher.jar"/>
+				<pathelement location="${lib.dir}/jsch-0.1.50.jar"/>												
+			</classpath>
+			<arg value="-DtoHost=${toHost}"/>
+			<arg value="-DusrId=${usrId}"/>
+			<arg value="-Dkeyfile=${keyfile}"/>
+			<arg value="-Dcommands=${commands}"/>
+			<arg value="common.function.ssh"/>
+		</java>
+	</target>	
+	<target name="common.function.ssh">
+		<echo message="${commands}"/>			
+		<sshexec trust="true" host="${toHost}" username="${usrId}" keyfile="${keyfile}"		
+				usepty="true" command="${commands}">
+		</sshexec>			
+	</target>
+		
 </project>
