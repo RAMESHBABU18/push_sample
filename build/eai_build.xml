@@ -31,7 +31,8 @@
 	
 	<target name="check.env">
 	<echo message="${ALL}" />
-	<echo message="${username}" />
+	<echo message="JOB_RUNNER_NAME:${username}" />
+	<echo message="$BUILD_USER" />
 	<antcontrib:if>
 		<equals arg1="${ALL}" arg2="ALL" />
 		<then>
